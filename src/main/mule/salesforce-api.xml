@@ -73,7 +73,7 @@ output application/json
                 </ee:transform>
             </on-error-propagate>
             <on-error-propagate type="APIKIT:UNSUPPORTED_MEDIA_TYPE">
-                <ee:transform xsi:schemaLocation="http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd">
+                <ee:transform xsi:schemaLocation="http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd" doc:id="bd4f71c6-ee91-4db7-a916-262ea1f003be">
                     <ee:message>
                         <ee:set-payload><![CDATA[%dw 2.0
 output application/json
@@ -81,7 +81,7 @@ output application/json
 {message: "Unsupported media type"}]]></ee:set-payload>
                     </ee:message>
                     <ee:variables>
-                        <ee:set-variable variableName="httpStatus">415</ee:set-variable>
+                        <ee:set-variable variableName="httpStatus"><![CDATA[415]]></ee:set-variable>
                     </ee:variables>
                 </ee:transform>
             </on-error-propagate>
@@ -142,22 +142,37 @@ output application/json
 	External_Identifier__c : vars.ext_id
 }]]]]></salesforce:records>
 		</salesforce:upsert>
-		<ee:transform doc:id="f20e1c7d-f543-4aa1-af93-2ad0649eb5fe">
-            <ee:message >
-						<ee:set-payload ><![CDATA[%dw 2.0
+		<choice doc:name="Choice" doc:id="6b53bef7-2f54-45b0-b97b-323e5023bb30" >
+			<when expression="sizeOf(payload) &gt; 0">
+				<ee:transform doc:id="f20e1c7d-f543-4aa1-af93-2ad0649eb5fe">
+            <ee:message>
+						<ee:set-payload><![CDATA[%dw 2.0
 output application/json
 ---
-payload map {
-	Id : $.id,
-	success: $.success,
-	error : $.errors,
+{
+	Id : payload[0].id,
+	success: payload[0].success,
+	error : payload[0].errors,
 	external_identifier : vars.ext_id,
-	created : $.created
+	created : payload[0].created
 }]]></ee:set-payload>
 					</ee:message>
 					<ee:variables>
             </ee:variables>
         </ee:transform>
+			</when>
+			<otherwise >
+				<ee:transform doc:name="Transform Message" doc:id="2c3e5c3a-fe35-41bf-8d32-f1dfd54b2a83" >
+					<ee:message >
+						<ee:set-payload ><![CDATA[%dw 2.0
+output application/java
+---
+{
+}]]></ee:set-payload>
+					</ee:message>
+				</ee:transform>
+			</otherwise>
+		</choice>
         <logger level="INFO" message="End Updating Dedicated Account Logger" doc:name="End Update Logger" />
     </flow>
     <flow name="get:\salesforce\accounts\id\(externalId):salesforce-api-config">
@@ -173,16 +188,39 @@ WHERE External_Identifier__c = :External_id</salesforce:salesforce-query>
 	External_id : vars.externalId
 }]]]></salesforce:parameters>
         </salesforce:query>
-        <ee:transform doc:id="56b59071-39b9-42ce-aaf4-df5ad5f83f30">
-            <ee:message >
-				<ee:set-payload ><![CDATA[%dw 2.0
+        <choice doc:name="Choice" doc:id="6cb82cbe-cb3f-4bbd-9d7c-0847e747c1d3" >
+			<when expression="sizeOf(payload) &gt; 0">
+				<ee:transform doc:id="56b59071-39b9-42ce-aaf4-df5ad5f83f30">
+            <ee:message>
+				<ee:set-payload><![CDATA[%dw 2.0
 output application/json
 ---
-payload]]></ee:set-payload>
+{
+	  	Name : payload[0].Name,
+	  	Industry : payload[0].Industry,
+	  	Description : payload[0].Description,
+	  	Rating : payload[0].Rating,
+	  	Revenue : payload[0].AnnualRevenue,
+	  	External_Identifier : payload[0].External_Identifier__c
+}]]></ee:set-payload>
 			</ee:message>
 			<ee:variables>
             </ee:variables>
         </ee:transform>
+			</when>
+			<otherwise >
+				<ee:transform doc:name="Transform Message" doc:id="0157f942-1ae5-44e8-a262-e9515fd63fcf" >
+					<ee:message >
+						<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+{
+	message : "No Records Found"
+}]]></ee:set-payload>
+					</ee:message>
+				</ee:transform>
+			</otherwise>
+		</choice>
         <logger level="INFO" message="End Flow of Account By Id" doc:name="End Account By Id Logger" />
     </flow>
     <flow name="get:\salesforce\accounts\name\(name):salesforce-api-config">
@@ -198,7 +236,9 @@ WHERE NAME like '%:name%'</salesforce:salesforce-query>
 	name : vars.name
 }]]]></salesforce:parameters>
         </salesforce:query>
-        <ee:transform doc:id="6f7cad44-56e1-4cd3-81d6-71460aaf20c8">
+        <choice doc:name="Choice" doc:id="3a80d204-f4a6-4456-971c-5c9988ad0a7d" >
+			<when expression="sizeOf(payload) &gt; 0">
+				<ee:transform doc:id="6f7cad44-56e1-4cd3-81d6-71460aaf20c8">
             <ee:message>
                 <ee:set-payload><![CDATA[%dw 2.0
 output application/json
@@ -217,6 +257,20 @@ output application/json
             </ee:message>
             <ee:variables />
         </ee:transform>
+			</when>
+			<otherwise >
+				<ee:transform doc:name="Transform Message" doc:id="98189cfe-9e9e-4590-9d67-5ba10b173dfc" >
+					<ee:message >
+						<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+{
+	message : "No Records Found"
+}]]></ee:set-payload>
+					</ee:message>
+				</ee:transform>
+			</otherwise>
+		</choice>
         <logger level="INFO" message="End Get Account By Name Flow" doc:name="End Get Acc By Name Logger" />
     </flow>
     <flow name="get:\salesforce\accounts:salesforce-api-config">
@@ -255,7 +309,8 @@ output application/json
     </flow>
     <flow name="post:\salesforce\accounts:application\json:salesforce-api-config">
         <logger level="INFO" doc:name="Start Create Account Logger" doc:id="917a85ec-fbd7-46ee-940b-75e78415a938" message="Start Creating Multi Accounts" />
-        <salesforce:create type="Account" doc:name="Create" doc:id="bae4da2b-d460-4b0d-8b79-0d98680aea3b" config-ref="Salesforce_Config">
+		<set-variable value="#[payload]" doc:name="Set Variable" doc:id="ad9e3856-c681-4e46-bb42-0ad49b2d3b11" variableName="inputjson"/>
+		<salesforce:create type="Account" doc:name="Create" doc:id="bae4da2b-d460-4b0d-8b79-0d98680aea3b" config-ref="Salesforce_Config">
             <salesforce:records><![CDATA[#[%dw 2.0
 output application/java
 ---
@@ -273,7 +328,19 @@ payload map {
                 <ee:set-payload><![CDATA[%dw 2.0
 output application/json
 ---
-payload]]></ee:set-payload>
+{
+	accouts: payload map {
+	success: $.success,
+	error : $.errors,
+	Name : vars.inputjson[$$].Name,
+	Industry : vars.inputjson[$$].Industry,
+	Description : vars.inputjson[$$].Description,
+	Rating : vars.inputjson[$$].Rating,
+	Revenue : vars.inputjson[$$].AnnualRevenue,
+	External_Identifier : vars.inputjson[$$].External_Identifier
+	}
+
+}]]></ee:set-payload>
             </ee:message>
         </ee:transform>
         <logger level="INFO" doc:name="End Create Account Logger" doc:id="b2c07687-fd1d-4185-a4c6-cc4600203f87" message="End Creating Multi Accounts" />
