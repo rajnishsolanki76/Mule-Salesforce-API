@@ -1,0 +1,141 @@
+#%RAML 1.0
+title: Salesforce Account API
+mediaType: application/json
+baseUri: localhost:8081
+protocols: HTTP
+version : 1.0
+description : Salesforce Account Object API for GET, POST, PUT 
+traits: 
+  pageable:
+    queryParameters:
+        limit:
+          type: integer
+          default: 10
+          minimum: 2
+          description: The `limit` parameter restricts the number of entries returned.
+types: 
+  account : 
+    {
+      "description": "Salesforce Account Object",
+      "properties": 
+        {
+          "Name": {
+              "type": "string",
+              "required": true
+            },
+          "External_Identifier": {
+              "type": "number",
+              "required": true,
+              "format": "int",
+            },
+          "Rating": {
+              "enum" :  ["Hot", "Cold", "Warm"],
+              "type": "string",
+              "required": true,
+               "example": "Cold"
+            },
+            "Revenue": {
+              "type": "number",
+              "maximum": 9007199254740991,
+              "required": true,
+              "format": "double",
+              "example": 3344
+            },
+          "Description": {
+              "type": "string",
+              "required": true,
+              "example": "Description For Salesforce Account Object"
+            },
+          "Industry" : {
+              "enum" :["Agriculture","Apparel","Banking","Biotechnology","Chemicals","Communications","Construction","Consulting","Education","Electronics","Energy","Engineering","Entertainment","Environmental","Finance","Food & Beverage","Government","Healthcare","Hospitality","Insurance","Machinery","Manufacturing","Media","Not For Profit","Recreation","Retail","Shipping","Technology","Telecommunications","Transportation","Utilities","Other"],
+              "example" : "Agriculture",
+              "required": true,
+              "type": "string"
+            } 
+        }
+      }
+      
+/salesforce/accounts :
+    get :
+      displayName: fetchAccounts
+      description: "Fetch salesforce accounts with limits option"
+      is: [pageable]
+      responses:
+        "200":
+          body: 
+            application/json :
+              type: account[] 
+              example: 
+                    [
+                     {
+                        "Name": "ABC",
+                        "External_Identifier": 101,
+                        "Rating": "Hot",
+                        "Revenue": 33222,
+                        "Description": "DUMMY ACCOUNT",
+                        "Industry" : "Banking" 
+                      },
+                      {
+                        "Name": "XYZ",
+                        "External_Identifier": 201,
+                        "Rating": "Cold",
+                        "Revenue": 33244,
+                        "Description": "DUMMY ACCOUNT 2",
+                        "Industry" : "Apparel" 
+                      }
+                    ]
+    post :
+       displayName: createMultiAcc
+       description: Multiple Accounts with salesforce
+       body:
+          application/json:
+            type : account[]
+       responses: 
+        "201":
+           body: 
+                application/json:
+                  type: object
+        "400": 
+          body: 
+            application/json:
+              type : object
+              example : |
+                  {
+                    "message" : "Salesforce Accounts not created successfully." 
+                  }
+             
+    /name/{name} :
+        get :
+          displayName: fetchAccountsByName
+          description: "Fetch salesforce accounts by name"
+          responses:
+            "200":
+              body: 
+                application/json :
+                  type: account[]
+        uriParameters:
+         name:
+            example: "ABC"
+            type: string   
+    /id:
+      /{externalId} :
+        get:
+          displayName: fetchAccountByExt-id
+          description: Fetch account based on external id
+          responses :
+            "200" :
+                body :
+                  application/json:
+                    type : account
+        
+        put:
+          displayName: updateAccount
+          description: Update a dedicated account.
+          body:
+            application/json:
+              type: account
+          responses:
+            "200" :
+              body :
+                application/json:
+                  type: object

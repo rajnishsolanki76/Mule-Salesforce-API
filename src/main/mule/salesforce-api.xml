@@ -1,0 +1,281 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<mule xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:apikit="http://www.mulesoft.org/schema/mule/mule-apikit" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core" xmlns:http="http://www.mulesoft.org/schema/mule/http" xmlns:salesforce="http://www.mulesoft.org/schema/mule/salesforce" xmlns:validation="http://www.mulesoft.org/schema/mule/validation" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd http://www.mulesoft.org/schema/mule/mule-apikit http://www.mulesoft.org/schema/mule/mule-apikit/current/mule-apikit.xsd  http://www.mulesoft.org/schema/mule/salesforce http://www.mulesoft.org/schema/mule/salesforce/current/mule-salesforce.xsd http://www.mulesoft.org/schema/mule/validation http://www.mulesoft.org/schema/mule/validation/current/mule-validation.xsd http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd">
+    <configuration-properties doc:name="Configuration properties" doc:id="e2517a94-0822-46cd-880a-e80f7b619be3" file="config/configuration.yaml" />
+    <http:listener-config name="salesforce-api-httpListenerConfig">
+        <http:listener-connection host="${http.host}" port="${http.port}" />
+    </http:listener-config>
+    <apikit:config name="salesforce-api-config" outboundHeadersMapName="outboundHeaders" httpStatusVarName="httpStatus" api="salesforce-api.raml" />
+    <salesforce:sfdc-config name="Salesforce_Config" doc:name="Salesforce Config" doc:id="f09219cd-0b2b-4700-9f86-853f2e90de8f">
+        <salesforce:cached-basic-connection username="rajnishsolanki76@gmail.com" password="Feb@2020" securityToken="feqN0DAtZiInSh1BVa1VhVLZ" />
+    </salesforce:sfdc-config>
+    <flow name="salesforce-api-main">
+        <http:listener config-ref="salesforce-api-httpListenerConfig" path="/api/*">
+            <http:response statusCode="#[vars.httpStatus default 200]">
+                <http:headers><![CDATA[#[vars.outboundHeaders default {}]]]></http:headers>
+            </http:response>
+            <http:error-response statusCode="#[vars.httpStatus default 500]">
+                <http:body><![CDATA[#[payload]]]></http:body>
+                <http:headers><![CDATA[#[vars.outboundHeaders default {}]]]></http:headers>
+            </http:error-response>
+        </http:listener>
+        <apikit:router config-ref="salesforce-api-config"/>
+        <error-handler>
+            <on-error-propagate type="APIKIT:BAD_REQUEST">
+                <ee:transform xsi:schemaLocation="http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd">
+                    <ee:message>
+                        <ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+{message: "Bad request"}]]></ee:set-payload>
+                    </ee:message>
+                    <ee:variables>
+                        <ee:set-variable variableName="httpStatus">400</ee:set-variable>
+                    </ee:variables>
+                </ee:transform>
+            </on-error-propagate>
+            <on-error-propagate type="APIKIT:NOT_FOUND">
+                <ee:transform xsi:schemaLocation="http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd">
+                    <ee:message>
+                        <ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+{message: "Resource not found"}]]></ee:set-payload>
+                    </ee:message>
+                    <ee:variables>
+                        <ee:set-variable variableName="httpStatus">404</ee:set-variable>
+                    </ee:variables>
+                </ee:transform>
+            </on-error-propagate>
+            <on-error-propagate type="APIKIT:METHOD_NOT_ALLOWED">
+                <ee:transform xsi:schemaLocation="http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd">
+                    <ee:message>
+                        <ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+{message: "Method not allowed"}]]></ee:set-payload>
+                    </ee:message>
+                    <ee:variables>
+                        <ee:set-variable variableName="httpStatus">405</ee:set-variable>
+                    </ee:variables>
+                </ee:transform>
+            </on-error-propagate>
+            <on-error-propagate type="APIKIT:NOT_ACCEPTABLE">
+                <ee:transform xsi:schemaLocation="http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd">
+                    <ee:message>
+                        <ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+{message: "Not acceptable"}]]></ee:set-payload>
+                    </ee:message>
+                    <ee:variables>
+                        <ee:set-variable variableName="httpStatus">406</ee:set-variable>
+                    </ee:variables>
+                </ee:transform>
+            </on-error-propagate>
+            <on-error-propagate type="APIKIT:UNSUPPORTED_MEDIA_TYPE">
+                <ee:transform xsi:schemaLocation="http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd">
+                    <ee:message>
+                        <ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+{message: "Unsupported media type"}]]></ee:set-payload>
+                    </ee:message>
+                    <ee:variables>
+                        <ee:set-variable variableName="httpStatus">415</ee:set-variable>
+                    </ee:variables>
+                </ee:transform>
+            </on-error-propagate>
+            <on-error-propagate type="APIKIT:NOT_IMPLEMENTED">
+                <ee:transform xsi:schemaLocation="http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd">
+                    <ee:message>
+                        <ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+{message: "Not Implemented"}]]></ee:set-payload>
+                    </ee:message>
+                    <ee:variables>
+                        <ee:set-variable variableName="httpStatus">501</ee:set-variable>
+                    </ee:variables>
+                </ee:transform>
+            </on-error-propagate>
+        </error-handler>
+    </flow>
+    <flow name="salesforce-api-console">
+        <http:listener config-ref="salesforce-api-httpListenerConfig" path="/console/*">
+            <http:response statusCode="#[vars.httpStatus default 200]">
+                <http:headers>#[vars.outboundHeaders default {}]</http:headers>
+            </http:response>
+            <http:error-response statusCode="#[vars.httpStatus default 500]">
+                <http:body>#[payload]</http:body>
+                <http:headers>#[vars.outboundHeaders default {}]</http:headers>
+            </http:error-response>
+        </http:listener>
+        <apikit:console config-ref="salesforce-api-config"/>
+        <error-handler>
+            <on-error-propagate type="APIKIT:NOT_FOUND">
+                <ee:transform xsi:schemaLocation="http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd">
+                    <ee:message>
+                        <ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+{message: "Resource not found"}]]></ee:set-payload>
+                    </ee:message>
+                    <ee:variables>
+                        <ee:set-variable variableName="httpStatus">404</ee:set-variable>
+                    </ee:variables>
+                </ee:transform>
+            </on-error-propagate>
+        </error-handler>
+    </flow>
+     <flow name="put:\salesforce\accounts\id\(externalId):application\json:salesforce-api-config">
+        <logger level="INFO" doc:name="Start Update AccountLogger" doc:id="2bb0335a-68f3-4586-829c-c1a776f049fc" message="Start Updating Dedicate Account" />
+        <set-variable value="#[attributes.uriParams.externalId as Number]" doc:name="External Id" doc:id="9efa569e-dd28-4547-bcc3-87f1bbe98dc3" variableName="ext_id" />
+        <salesforce:upsert doc:name="Upsert" doc:id="3c1be850-1236-4e73-a014-01dd5b2aa894" config-ref="Salesforce_Config" externalIdFieldName="External_Identifier__c" type="Account">
+			<salesforce:records ><![CDATA[#[output application/java
+---
+ [{
+	Name : payload.Name,
+	Industry: payload.Industry,
+	Rating : payload.Rating,
+	Description : payload.Description,
+	AnnualRevenue : payload.Revenue,
+	External_Identifier__c : vars.ext_id
+}]]]]></salesforce:records>
+		</salesforce:upsert>
+		<ee:transform doc:id="f20e1c7d-f543-4aa1-af93-2ad0649eb5fe">
+            <ee:message >
+						<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+payload map {
+	Id : $.id,
+	success: $.success,
+	error : $.errors,
+	external_identifier : vars.ext_id,
+	created : $.created
+}]]></ee:set-payload>
+					</ee:message>
+					<ee:variables>
+            </ee:variables>
+        </ee:transform>
+        <logger level="INFO" message="End Updating Dedicated Account Logger" doc:name="End Update Logger" />
+    </flow>
+    <flow name="get:\salesforce\accounts\id\(externalId):salesforce-api-config">
+        <logger level="INFO" doc:name="Start Get Account By Id Logger" doc:id="a3a5bae6-0fb2-4053-b22f-eafed9e945e3" message="Start Fetching Records By Id" />
+        <set-variable value="#[attributes.uriParams.externalId]" doc:name="Set Id Variable" doc:id="c9878ecc-4f5c-48b6-a216-a5329f950b8c" variableName="externalId" />
+        <salesforce:query doc:name="Get Account By Id" doc:id="9d6c7b8c-15f6-43f5-9a67-eb87952fc5fa" config-ref="Salesforce_Config">
+            <salesforce:salesforce-query>SELECT Name , AnnualRevenue, Industry, Rating,External_Identifier__c,Description
+FROM Account
+WHERE External_Identifier__c = :External_id</salesforce:salesforce-query>
+            <salesforce:parameters><![CDATA[#[output application/java
+---
+{
+	External_id : vars.externalId
+}]]]></salesforce:parameters>
+        </salesforce:query>
+        <ee:transform doc:id="56b59071-39b9-42ce-aaf4-df5ad5f83f30">
+            <ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+payload]]></ee:set-payload>
+			</ee:message>
+			<ee:variables>
+            </ee:variables>
+        </ee:transform>
+        <logger level="INFO" message="End Flow of Account By Id" doc:name="End Account By Id Logger" />
+    </flow>
+    <flow name="get:\salesforce\accounts\name\(name):salesforce-api-config">
+        <logger level="INFO" doc:name="Get Account By Name Logger" doc:id="6a4e5b18-0481-4fa2-941c-d86b34844d41" message="Start Get Acc By Name Flow" />
+        <set-variable value="#[attributes.uriParams.name default &quot;&quot;]" doc:name="Set Name Variable" doc:id="3457996a-584f-488f-bf60-a3d8198025d1" variableName="name" />
+        <salesforce:query doc:name="Get Account By Name Query" doc:id="14b5f65f-9477-432c-9267-6ad714e0853f" config-ref="Salesforce_Config">
+            <salesforce:salesforce-query>SELECT Name , AnnualRevenue, Industry, Rating,External_Identifier__c,Description
+FROM Account
+WHERE NAME like '%:name%'</salesforce:salesforce-query>
+            <salesforce:parameters><![CDATA[#[output application/java
+---
+{
+	name : vars.name
+}]]]></salesforce:parameters>
+        </salesforce:query>
+        <ee:transform doc:id="6f7cad44-56e1-4cd3-81d6-71460aaf20c8">
+            <ee:message>
+                <ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+{
+	accounts : payload map 
+	{
+	  	Name : $.Name,
+	  	Industry : $.Industry,
+	  	Description : $.Description,
+	  	Rating : $.Rating,
+	  	Revenue : $.AnnualRevenue,
+	  	External_Identifier : $.External_Identifier__c
+	 }
+  }]]></ee:set-payload>
+            </ee:message>
+            <ee:variables />
+        </ee:transform>
+        <logger level="INFO" message="End Get Account By Name Flow" doc:name="End Get Acc By Name Logger" />
+    </flow>
+    <flow name="get:\salesforce\accounts:salesforce-api-config">
+        <logger level="INFO" doc:name="Start Get Account Logger" doc:id="25980161-3e21-4b44-a84c-2af8143b7d08" message="Starting Flow for Get Accounts From Salesforce" />
+        <set-variable value="#[attributes.queryParams.limit]" doc:name="Set Limit Variable " doc:id="42311dcd-533a-4319-b029-8b2566f6ef3b" variableName="limit" />
+        <salesforce:query doc:name="Get Accouts Limit Query" doc:id="616c56c5-61c0-41bc-b3bf-27812dc0e26a" config-ref="Salesforce_Config">
+            <salesforce:salesforce-query>SELECT Name , AnnualRevenue, Industry, Rating,External_Identifier__c,Description
+FROM Account
+ORDER BY NAME
+LIMIT :limit</salesforce:salesforce-query>
+            <salesforce:parameters><![CDATA[#[output application/java
+---
+{
+	limit : vars.limit
+}]]]></salesforce:parameters>
+        </salesforce:query>
+        <ee:transform xsi:schemaLocation="http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd" doc:id="3c78dc46-5f6c-4be1-b744-d2c382f4274a">
+            <ee:message>
+                <ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+{
+  accounts : payload map 
+  {
+	  	Name : $.Name,
+	  	Industry : $.Industry,
+	  	Description : $.Description,
+	  	Rating : $.Rating,
+	  	Revenue : $.AnnualRevenue,
+	  	External_Identifier : $.External_Identifier__c
+	}
+}]]></ee:set-payload>
+            </ee:message>
+        </ee:transform>
+        <logger level="INFO" doc:name="End Get Account Logger" doc:id="7d500d12-abb3-4100-b7c9-f8cfec822c04" message="End Get Account" />
+    </flow>
+    <flow name="post:\salesforce\accounts:application\json:salesforce-api-config">
+        <logger level="INFO" doc:name="Start Create Account Logger" doc:id="917a85ec-fbd7-46ee-940b-75e78415a938" message="Start Creating Multi Accounts" />
+        <salesforce:create type="Account" doc:name="Create" doc:id="bae4da2b-d460-4b0d-8b79-0d98680aea3b" config-ref="Salesforce_Config">
+            <salesforce:records><![CDATA[#[%dw 2.0
+output application/java
+---
+payload map {
+	Name : $.Name,
+	Industry: $.Industry,
+	Rating : $.Rating,
+	Description : $.Description,
+	AnnualRevenue : $.Revenue,
+	External_Identifier__c : $.External_Identifier
+}]]]></salesforce:records>
+        </salesforce:create>
+        <ee:transform doc:name="Transform Message" doc:id="38924f69-a8e6-45cd-a41d-6cba5d6c93e5">
+            <ee:message>
+                <ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+payload]]></ee:set-payload>
+            </ee:message>
+        </ee:transform>
+        <logger level="INFO" doc:name="End Create Account Logger" doc:id="b2c07687-fd1d-4185-a4c6-cc4600203f87" message="End Creating Multi Accounts" />
+    </flow>
+</mule>

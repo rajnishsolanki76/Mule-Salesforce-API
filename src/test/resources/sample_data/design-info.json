@@ -1,0 +1,8 @@
+{
+  "sampleData": {
+    "8c572693-6396-4f57-96f3-bf7960707e7e": {
+      "payload": "sample_data/json.json",
+      "vars-ext_id": "sample_data/defaultstringtype.dwl"
+    }
+  }
+}

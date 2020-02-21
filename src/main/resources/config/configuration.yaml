@@ -1,0 +1,7 @@
+http:
+  host: "localhost"
+  port: "8081"
+  
+salesforce:
+  user: rajnishsolnki76@gmail.com
+  token: feqN0DAtZiInSh1BVa1VhVLZ
